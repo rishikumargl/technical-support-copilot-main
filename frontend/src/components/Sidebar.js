@@ -46,7 +46,7 @@ function Sidebar({ isOpen }) {
         <div className="nav-section docs">
           <h3>Resources</h3>
           <a
-            href="/README.md"
+            href="https://github.com/rishikumargl/technical-support-copilot-main/blob/frontend/frontend/README.md"
             target="_blank"
             rel="noopener noreferrer"
             className="nav-item external"
@@ -56,7 +56,7 @@ function Sidebar({ isOpen }) {
             <FiExternalLink size={16} />
           </a>
           <a
-            href="https://github.com/yourusername/rag-assistant"
+            href="https://github.com/rishikumargl/technical-support-copilot-main/"
             target="_blank"
             rel="noopener noreferrer"
             className="nav-item external"
