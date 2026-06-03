@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   FiMessageSquare,
   FiFileText,
-  FiBarChart3,
+  FiBarChart2,
   FiSettings,
   FiGithub,
   FiExternalLink,
@@ -16,7 +16,7 @@ function Sidebar({ isOpen }) {
   const navItems = [
     { path: '/', label: 'Chat', icon: FiMessageSquare },
     { path: '/documents', label: 'Documents', icon: FiFileText },
-    { path: '/analytics', label: 'Analytics', icon: FiBarChart3 },
+    { path: '/analytics', label: 'Analytics', icon: FiBarChart2 },
     { path: '/config', label: 'Configuration', icon: FiSettings },
   ];
 
