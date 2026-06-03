@@ -1,0 +1,98 @@
+{
+  "pipeline_metadata": {
+    "total_documents": 2,
+    "total_chunks": 6,
+    "chunking_strategy": "semantic",
+    "avg_chunk_size": 388
+  },
+  "documents_summary": [
+    {
+      "document_name": "v1_setup_guide",
+      "department": "Engineering",
+      "category": "Guide",
+      "version": "1",
+      "chunk_count": 3
+    },
+    {
+      "document_name": "v2_remote_policy",
+      "department": "HR",
+      "category": "Policy",
+      "version": "2",
+      "chunk_count": 3
+    }
+  ],
+  "chunks": [
+    {
+      "chunk_id": "98cff571-95f7-478a-8b13-a9b32f3576a9",
+      "document_name": "v1_setup_guide",
+      "strategy": "semantic",
+      "text": "Engineering Setup Guide v1.0 ============================ This document covers the complete setup procedure for our engineering infrastructure. Chapter 1: System Prerequisites Before beginning, ensure your machine meets the following requirements: - Python 3.8 or higher - PostgreSQL 12.0 or higher - Node.js 16.0 or higher - At least 8GB RAM - 50GB free disk space All tools should be installed from their official sources Package managers like",
+      "start_pos": 0,
+      "end_pos": 445,
+      "size": 445,
+      "department": "Engineering",
+      "category": "Guide",
+      "version": "1"
+    },
+    {
+      "chunk_id": "726c6d54-7b16-45d7-8ad8-bb77e74bf663",
+      "document_name": "v1_setup_guide",
+      "strategy": "semantic",
+      "text": "apt, brew, or choco can be used for convenience on respective platforms. Chapter 2: Installation Steps Step 1: Clone the repository from GitHub Step 2: Install Python dependencies using pip Step 3: Initialize the database schema Step 4: Run the test suite to verify installation Step 5: Configure environment variables Each step must complete successfully before proceeding to the next. Chapter 3: Configuration Edit the .env file with your specific configuration Key variables include:",
+      "start_pos": 446,
+      "end_pos": 932,
+      "size": 486,
+      "department": "Engineering",
+      "category": "Guide",
+      "version": "1"
+    },
+    {
+      "chunk_id": "ab8eb9b4-9e77-4893-bdbf-acad672f542b",
+      "document_name": "v1_setup_guide",
+      "strategy": "semantic",
+      "text": "- DATABASE_URL: Connection string for PostgreSQL - API_KEY: Authentication token for external services - LOG_LEVEL: Verbosity of application logging After configuration, restart all services to apply changes.",
+      "start_pos": 933,
+      "end_pos": 1141,
+      "size": 208,
+      "department": "Engineering",
+      "category": "Guide",
+      "version": "1"
+    },
+    {
+      "chunk_id": "b9139c24-1408-49ea-bac7-8cfad644273c",
+      "document_name": "v2_remote_policy",
+      "strategy": "semantic",
+      "text": "HR Policy Document - Remote Work Policy v2.0 ============================================= Effective Date: January 1, 2024 Last Updated: June 2024 Section 1: Overview This policy establishes guidelines for remote work arrangements within our organization. Employees may request remote work status through their direct manager and HR department. All remote workers must maintain the same productivity and communication standards as office-based employees. Section 2: Eligibility",
+      "start_pos": 0,
+      "end_pos": 477,
+      "size": 477,
+      "department": "HR",
+      "category": "Policy",
+      "version": "2"
+    },
+    {
+      "chunk_id": "a7caa5e5-217a-41d6-a7ca-1fa529eaf55b",
+      "document_name": "v2_remote_policy",
+      "strategy": "semantic",
+      "text": "Not all positions are eligible for remote work Positions requiring physical presence for security, equipment access, or client interaction may not qualify Managers will evaluate each request on a case-by-case basis. Section 3: Work Hours and Availability Remote workers are expected to maintain standard business hours Daily stand-ups and weekly team meetings are mandatory Communication must occur via Slack, email, or scheduled video calls. Section 4: Equipment and Technology",
+      "start_pos": 478,
+      "end_pos": 956,
+      "size": 478,
+      "department": "HR",
+      "category": "Policy",
+      "version": "2"
+    },
+    {
+      "chunk_id": "c5742630-9f0e-4c88-9f57-22cd6b91f99b",
+      "document_name": "v2_remote_policy",
+      "strategy": "semantic",
+      "text": "The company provides or reimburses for necessary equipment including laptop, monitor, keyboard, and mouse Internet connectivity must support video conferencing and large file transfers Backup internet (e.g., mobile hotspot) is recommended.",
+      "start_pos": 957,
+      "end_pos": 1196,
+      "size": 239,
+      "department": "HR",
+      "category": "Policy",
+      "version": "2"
+    }
+  ]
+}
