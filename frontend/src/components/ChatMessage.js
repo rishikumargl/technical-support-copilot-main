@@ -92,7 +92,14 @@ function ChatMessage({ message, onFeedback }) {
           </div>
         )}
 
-        {message.confidence && (
+        {message.status === 'RAG_NOT_IMPLEMENTED' && (
+          <div className="status-section warning">
+            <span className="status-icon">⚠️</span>
+            <span className="status-message">{message.message}</span>
+          </div>
+        )}
+
+        {message.confidence !== null && message.confidence !== undefined && (
           <div className="confidence-section">
             <span className="confidence-label">Confidence Score:</span>
             <div className="confidence-bar">

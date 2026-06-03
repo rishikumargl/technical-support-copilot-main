@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiUpload, FiTrash2, FiLoader, FiEye } from 'react-icons/fi';
-import { getDocuments, uploadDocument, deleteDocument } from '../api/ragApi';
+import { FiUpload, FiTrash2, FiLoader, FiX, FiFileText } from 'react-icons/fi';
+import { getDocuments, uploadDocument, deleteDocument, getDocumentChunks } from '../api/ragApi';
 import './DocumentManager.css';
 
 function DocumentManager() {
@@ -13,6 +13,8 @@ function DocumentManager() {
     category: '',
     version: '1.0',
   });
+  const [viewingChunks, setViewingChunks] = useState(null);
+  const [chunksLoading, setChunksLoading] = useState(false);
 
   useEffect(() => {
     fetchDocuments();
@@ -56,6 +58,24 @@ function DocumentManager() {
         console.error('Delete error:', error);
       }
     }
+  };
+
+  const handleViewChunks = async (doc) => {
+    setViewingChunks(doc);
+    setChunksLoading(true);
+    try {
+      const data = await getDocumentChunks(doc.id);
+      setViewingChunks({ ...doc, chunks: data.chunks || [] });
+    } catch (error) {
+      console.error('Error fetching chunks:', error);
+      setViewingChunks({ ...doc, chunks: [], error: 'Failed to load chunks' });
+    } finally {
+      setChunksLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setViewingChunks(null);
   };
 
   return (
@@ -185,9 +205,13 @@ function DocumentManager() {
                 </div>
 
                 <div className="doc-actions">
-                  <button className="action-btn view-btn">
-                    <FiEye size={18} />
-                    View
+                  <button
+                    className="action-btn chunks-btn"
+                    onClick={() => handleViewChunks(doc)}
+                    title="View document chunks"
+                  >
+                    <FiFileText size={18} />
+                    View Chunks
                   </button>
                   <button
                     className="action-btn delete-btn"
@@ -202,6 +226,50 @@ function DocumentManager() {
           </div>
         )}
       </div>
+
+      {/* Chunks Modal */}
+      {viewingChunks && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content chunks-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Document Chunks - {viewingChunks.name}</h3>
+              <button className="close-btn" onClick={closeModal}>
+                <FiX size={24} />
+              </button>
+            </div>
+            <div className="modal-body chunks-body">
+              {chunksLoading ? (
+                <div className="chunks-loading">
+                  <FiLoader className="spin" size={24} />
+                  <p>Loading chunks...</p>
+                </div>
+              ) : viewingChunks.error ? (
+                <div className="chunks-error">
+                  <p>{viewingChunks.error}</p>
+                </div>
+              ) : viewingChunks.chunks && viewingChunks.chunks.length > 0 ? (
+                <div className="chunks-list">
+                  {viewingChunks.chunks.map((chunk, idx) => (
+                    <div key={chunk.chunk_id || idx} className="chunk-item">
+                      <div className="chunk-header">
+                        <span className="chunk-number">Chunk {chunk.position + 1}</span>
+                        {chunk.embedding && (
+                          <span className="chunk-badge">Has Embedding</span>
+                        )}
+                      </div>
+                      <p className="chunk-content">{chunk.content}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="chunks-empty">
+                  <p>No chunks found for this document</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
