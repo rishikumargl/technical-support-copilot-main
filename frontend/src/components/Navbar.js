@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiMenu, FiMoon, FiSun, FiLogOut } from 'react-icons/fi';
+import { FiMenu, FiMoon, FiSun } from 'react-icons/fi';
 import './Navbar.css';
 
 function Navbar({ onToggleSidebar, isDarkMode, onToggleDarkMode }) {
@@ -21,10 +21,6 @@ function Navbar({ onToggleSidebar, isDarkMode, onToggleDarkMode }) {
           title={isDarkMode ? 'Light Mode' : 'Dark Mode'}
         >
           {isDarkMode ? <FiSun size={20} /> : <FiMoon size={20} />}
-        </button>
-        <button className="logout-btn">
-          <FiLogOut size={20} />
-          Logout
         </button>
       </div>
     </nav>
