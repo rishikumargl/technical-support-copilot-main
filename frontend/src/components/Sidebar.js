@@ -6,6 +6,8 @@ import {
   FiSettings,
   FiGithub,
   FiExternalLink,
+  FiGitBranch,
+  FiBarChart2,
 } from 'react-icons/fi';
 import './Sidebar.css';
 
@@ -15,6 +17,8 @@ function Sidebar({ isOpen }) {
   const navItems = [
     { path: '/', label: 'Chat', icon: FiMessageSquare },
     { path: '/documents', label: 'Documents', icon: FiFileText },
+    { path: '/rag-pipeline', label: 'RAG Pipeline', icon: FiGitBranch },
+    { path: '/analytics', label: 'Analytics', icon: FiBarChart2 },
     { path: '/config', label: 'Configuration', icon: FiSettings },
   ];
 

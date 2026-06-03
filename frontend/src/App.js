@@ -6,6 +6,7 @@ import ChatInterface from './pages/ChatInterface';
 import DocumentManager from './pages/DocumentManager';
 import Analytics from './pages/Analytics';
 import SystemConfig from './pages/SystemConfig';
+import RAGPipeline from './pages/RAGPipeline';
 import './App.css';
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
             <Routes>
               <Route path="/" element={<ChatInterface />} />
               <Route path="/documents" element={<DocumentManager />} />
+              <Route path="/rag-pipeline" element={<RAGPipeline />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/config" element={<SystemConfig />} />
             </Routes>

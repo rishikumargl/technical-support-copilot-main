@@ -32,7 +32,9 @@ function ChatMessage({ message, onFeedback }) {
   return (
     <div className="chat-message assistant-message">
       <div className="message-header">
-        <span className="model-badge">RAG Assistant</span>
+        <span className="model-badge">
+          {message.model ? `${message.model}` : 'RAG Assistant'}
+        </span>
         <span className="strategy-badge">{message.strategy || 'hybrid'}</span>
       </div>
 
@@ -49,43 +51,50 @@ function ChatMessage({ message, onFeedback }) {
                 <div key={idx} className="source-item">
                   <div className="source-header">
                     <span className="source-doc">
-                      {source.document_name}
+                      {source.document || source.document_name}
                     </span>
-                    {source.metadata && (
-                      <span className="source-meta">
-                        {source.metadata.department && (
-                          <span className="meta-tag">{source.metadata.department}</span>
-                        )}
-                        {source.metadata.category && (
-                          <span className="meta-tag">{source.metadata.category}</span>
-                        )}
+                    <span className="source-meta">
+                      {(source.department || source.metadata?.department) && (
+                        <span className="meta-tag">{source.department || source.metadata.department}</span>
+                      )}
+                      {(source.category || source.metadata?.category) && (
+                        <span className="meta-tag">{source.category || source.metadata.category}</span>
+                      )}
+                    </span>
+                  </div>
+                  {source.chunk && <p className="source-content">{source.chunk}</p>}
+                  <div className="source-meta-info">
+                    {source.confidence && (
+                      <span className="relevance">
+                        Match: {typeof source.confidence === 'number' ? (source.confidence * 100).toFixed(1) : source.confidence}%
                       </span>
                     )}
-                  </div>
-                  <p className="source-content">{source.chunk}</p>
-                  <div className="source-meta-info">
-                    <span className="relevance">
-                      Match: {(source.relevance_score * 100).toFixed(1)}%
-                    </span>
-                    {source.metadata?.version && (
-                      <span className="version">v{source.metadata.version}</span>
+                    {source.relevance_score && (
+                      <span className="relevance">
+                        Match: {(source.relevance_score * 100).toFixed(1)}%
+                      </span>
+                    )}
+                    {(source.version || source.metadata?.version) && (
+                      <span className="version">v{source.version || source.metadata.version}</span>
                     )}
                   </div>
-                  <button
-                    className="copy-btn"
-                    onClick={() => handleCopy(source.chunk, `source-${idx}`)}
-                    title="Copy to clipboard"
-                  >
-                    {copiedId === `source-${idx}` ? (
-                      <>
-                        <FiCheck size={16} /> Copied
-                      </>
-                    ) : (
-                      <>
-                        <FiCopy size={16} /> Copy
-                      </>
-                    )}
-                  </button>
+                  {source.chunk && (
+                    <button
+                      className="copy-btn"
+                      onClick={() => handleCopy(source.chunk, `source-${idx}`)}
+                      title="Copy to clipboard"
+                    >
+                      {copiedId === `source-${idx}` ? (
+                        <>
+                          <FiCheck size={16} /> Copied
+                        </>
+                      ) : (
+                        <>
+                          <FiCopy size={16} /> Copy
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

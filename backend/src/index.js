@@ -17,6 +17,9 @@ const feedbackRouter = require('./routes/feedback');
 const systemRouter = require('./routes/system');
 const cacheRouter = require('./routes/cache');
 const metadataRouter = require('./routes/metadata');
+const ingestionRouter = require('./routes/ingestion');
+const embeddingsRouter = require('./routes/embeddings');
+const chatRouter = require('./routes/chat');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -54,6 +57,9 @@ app.use('/api/feedback', feedbackRouter);
 app.use('/api/system', systemRouter);
 app.use('/api/cache', cacheRouter);
 app.use('/api/metadata', metadataRouter);
+app.use('/api/ingestion', ingestionRouter);
+app.use('/api/embeddings', embeddingsRouter);
+app.use('/api/chat', chatRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });

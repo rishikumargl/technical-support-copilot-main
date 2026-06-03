@@ -107,11 +107,11 @@ function Analytics() {
                         <div className="strategy-metrics">
                           <div className="metric">
                             <span className="label">Accuracy</span>
-                            <span className="value">{(data.accuracy || 0).toFixed(2)}%</span>
+                            <span className="value">{typeof data.accuracy === 'number' ? (data.accuracy).toFixed(2) : (0).toFixed(2)}%</span>
                           </div>
                           <div className="metric">
                             <span className="label">Precision</span>
-                            <span className="value">{(data.precision || 0).toFixed(2)}%</span>
+                            <span className="value">{typeof data.precision === 'number' ? (data.precision).toFixed(2) : (0).toFixed(2)}%</span>
                           </div>
                           <div className="metric">
                             <span className="label">Avg Time</span>

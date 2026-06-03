@@ -1,10 +1,11 @@
 """
 Interactive Question Answering System
-Ask questions about the enterprise documents!
+Ask questions about the enterprise documents with HuggingFace inference!
 """
 import json
 from qdrant_setup import QdrantDB
 from hybrid_search import HybridSearchEngine
+from inference_service import InferenceService
 
 print("\n" + "="*70)
 print("ENTERPRISE RAG ASSISTANT - QUESTION ANSWERING SYSTEM")
@@ -17,6 +18,9 @@ search = HybridSearchEngine(db.client)
 search.load_chunks_from_file("./output/ingestion_output_fixed.json")
 search.seed_qdrant()
 search.build_bm25_index()
+
+# Initialize inference
+inference = InferenceService()
 
 print("[OK] System initialized and ready!")
 print("\nDatabase Status:")
@@ -64,8 +68,8 @@ def parse_query(input_text):
     question = " ".join(question_parts)
     return question, filters, top_k
 
-def display_results(results, question, filters, top_k):
-    """Display search results nicely"""
+def display_results(results, question, filters, top_k, inference):
+    """Display search results and generate AI response"""
     if not results:
         print("\n[NO RESULTS FOUND]")
         print("Cannot find a reliable answer in the corporate knowledge base.")
@@ -90,6 +94,18 @@ def display_results(results, question, filters, top_k):
         print(f"     - Dense (Semantic): {result['dense_score']:.3f}")
         print(f"     - Sparse (Keyword): {result['sparse_score']:.3f}")
         print()
+
+    # Generate AI response using HuggingFace inference
+    print("[GENERATING ANSWER WITH AI...]")
+    answer_result = inference.answer_with_sources(question, results)
+
+    print("\n" + "="*70)
+    print("AI RESPONSE:")
+    print("="*70)
+    print(answer_result['answer'])
+    print(f"\nConfidence: {answer_result['confidence']:.1%}")
+    print(f"Model: {answer_result['model']}")
+    print("="*70)
 
 # Main loop
 try:
@@ -120,8 +136,8 @@ try:
             top_k=top_k
         )
 
-        # Display results
-        display_results(results, question, filters, top_k)
+        # Display results and generate AI response
+        display_results(results, question, filters, top_k, inference)
 
 except KeyboardInterrupt:
     print("\n\nGoodbye!")

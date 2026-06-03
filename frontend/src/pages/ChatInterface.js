@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiSend, FiSliders, FiLoader } from 'react-icons/fi';
 import ChatMessage from '../components/ChatMessage';
-import { queryRAGAdvanced, submitFeedback } from '../api/ragApi';
+import { chatQuery, queryRAGAdvanced, submitFeedback } from '../api/ragApi';
 import './ChatInterface.css';
 
 function ChatInterface() {
@@ -58,12 +58,9 @@ function ChatInterface() {
     setLoading(true);
 
     try {
-      const response = await queryRAGAdvanced(query, {
-        strategy: filters.strategy,
-        topK: filters.topK,
-        threshold: filters.threshold,
-        rerank: filters.rerank,
-        filters: filters.department ? { department: filters.department } : {},
+      // Use new chat endpoint with HuggingFace inference
+      const response = await chatQuery(query, {
+        department: filters.department || undefined,
       });
 
       const assistantMessage = {
@@ -71,9 +68,10 @@ function ChatInterface() {
         type: 'assistant',
         content: response.answer || response.response || 'No answer available.',
         sources: response.sources || [],
-        strategy: filters.strategy,
-        confidence: response.confidence_score,
+        strategy: 'huggingface-rag',
+        confidence: response.confidence,
         status: response.status,
+        model: response.model,
         message: response.message,
         timestamp: new Date().toLocaleTimeString([], {
           hour: '2-digit',

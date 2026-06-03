@@ -1,6 +1,15 @@
 import client from './client';
 
-// Query API
+// Chat Query (with HuggingFace inference)
+export const chatQuery = async (query, filters = {}) => {
+  return client.post('/chat/query', {
+    query,
+    filters,
+    use_cache: true,
+  });
+};
+
+// Query API (fallback keyword search)
 export const queryRAG = async (query, filters = {}) => {
   return client.post('/rag/query', {
     query,
@@ -125,4 +134,61 @@ export const getCacheStats = async () => {
 // Clear cache
 export const clearCache = async () => {
   return client.post('/cache/clear');
+};
+
+// ==========================================
+// INGESTION PIPELINE API
+// ==========================================
+
+// Process document - Parse and chunk
+export const processDocument = async (documentId, options = {}) => {
+  return client.post(`/ingestion/process/${documentId}`, {
+    chunkingStrategy: options.strategy || 'semantic',
+    chunkSize: options.chunkSize || 512,
+    overlapSize: options.overlapSize || 128,
+  });
+};
+
+// Get ingestion progress
+export const getIngestionProgress = async (documentId) => {
+  return client.get(`/ingestion/progress/${documentId}`);
+};
+
+// Batch ingestion - Process multiple documents
+export const batchProcessDocuments = async (documentIds, strategy = 'semantic') => {
+  return client.post('/ingestion/batch', {
+    documentIds,
+    chunkingStrategy: strategy,
+  });
+};
+
+// Get ingestion strategies comparison for a document
+export const getIngestionStrategiesComparison = async (documentId) => {
+  return client.get(`/ingestion/strategies/${documentId}`);
+};
+
+// ==========================================
+// EMBEDDINGS API
+// ==========================================
+
+// Generate embeddings for a document
+export const generateEmbeddings = async (documentId) => {
+  return client.post(`/embeddings/generate/${documentId}`);
+};
+
+// Get embedding generation progress
+export const getEmbeddingProgress = async (documentId) => {
+  return client.get(`/embeddings/progress/${documentId}`);
+};
+
+// Batch generate embeddings for multiple documents
+export const batchGenerateEmbeddings = async (documentIds) => {
+  return client.post('/embeddings/batch', {
+    documentIds,
+  });
+};
+
+// Get embedding statistics
+export const getEmbeddingStats = async () => {
+  return client.get('/embeddings/stats');
 };
