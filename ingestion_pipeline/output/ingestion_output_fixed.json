@@ -1,0 +1,98 @@
+{
+  "pipeline_metadata": {
+    "total_documents": 2,
+    "total_chunks": 6,
+    "chunking_strategy": "fixed",
+    "avg_chunk_size": 460
+  },
+  "documents_summary": [
+    {
+      "document_name": "v1_setup_guide",
+      "department": "Engineering",
+      "category": "Guide",
+      "version": "1",
+      "chunk_count": 3
+    },
+    {
+      "document_name": "v2_remote_policy",
+      "department": "HR",
+      "category": "Policy",
+      "version": "2",
+      "chunk_count": 3
+    }
+  ],
+  "chunks": [
+    {
+      "chunk_id": "8c3565dc-aa43-4264-8f3f-43bbfc12b69b",
+      "document_name": "v1_setup_guide",
+      "strategy": "fixed_size",
+      "text": "\n    Engineering Setup Guide v1.0\n    ============================\n\n    This document covers the complete setup procedure for our engineering infrastructure.\n\n    Chapter 1: System Prerequisites\n\n    Before beginning, ensure your machine meets the following requirements:\n    - Python 3.8 or higher\n    - PostgreSQL 12.0 or higher\n    - Node.js 16.0 or higher\n    - At least 8GB RAM\n    - 50GB free disk space\n\n    All tools should be installed from their official sources. Package managers like\n    ",
+      "start_pos": 0,
+      "end_pos": 500,
+      "size": 500,
+      "department": "Engineering",
+      "category": "Guide",
+      "version": "1"
+    },
+    {
+      "chunk_id": "4e16e4c8-2619-40bb-9de2-5b4424dc9bc3",
+      "document_name": "v1_setup_guide",
+      "strategy": "fixed_size",
+      "text": "their official sources. Package managers like\n    apt, brew, or choco can be used for convenience on respective platforms.\n\n    Chapter 2: Installation Steps\n\n    Step 1: Clone the repository from GitHub\n    Step 2: Install Python dependencies using pip\n    Step 3: Initialize the database schema\n    Step 4: Run the test suite to verify installation\n    Step 5: Configure environment variables\n\n    Each step must complete successfully before proceeding to the next.\n\n    Chapter 3: Configuration\n\n ",
+      "start_pos": 450,
+      "end_pos": 950,
+      "size": 500,
+      "department": "Engineering",
+      "category": "Guide",
+      "version": "1"
+    },
+    {
+      "chunk_id": "090bccfb-2b2b-40e8-96ae-0e2626efe6c9",
+      "document_name": "v1_setup_guide",
+      "strategy": "fixed_size",
+      "text": "ding to the next.\n\n    Chapter 3: Configuration\n\n    Edit the .env file with your specific configuration. Key variables include:\n    - DATABASE_URL: Connection string for PostgreSQL\n    - API_KEY: Authentication token for external services\n    - LOG_LEVEL: Verbosity of application logging\n\n    After configuration, restart all services to apply changes.\n    ",
+      "start_pos": 900,
+      "end_pos": 1259,
+      "size": 359,
+      "department": "Engineering",
+      "category": "Guide",
+      "version": "1"
+    },
+    {
+      "chunk_id": "e344f9af-4d69-42fc-8911-ccbc4a5f7c21",
+      "document_name": "v2_remote_policy",
+      "strategy": "fixed_size",
+      "text": "\n    HR Policy Document - Remote Work Policy v2.0\n    =============================================\n\n    Effective Date: January 1, 2024\n    Last Updated: June 2024\n\n    Section 1: Overview\n\n    This policy establishes guidelines for remote work arrangements within our organization.\n    Employees may request remote work status through their direct manager and HR department.\n    All remote workers must maintain the same productivity and communication standards as\n    office-based employees.\n\n    ",
+      "start_pos": 0,
+      "end_pos": 500,
+      "size": 500,
+      "department": "HR",
+      "category": "Policy",
+      "version": "2"
+    },
+    {
+      "chunk_id": "0e5596c2-001c-4549-97d2-d68ac72730ef",
+      "document_name": "v2_remote_policy",
+      "strategy": "fixed_size",
+      "text": "ion standards as\n    office-based employees.\n\n    Section 2: Eligibility\n\n    Not all positions are eligible for remote work. Positions requiring physical presence\n    for security, equipment access, or client interaction may not qualify. Managers will\n    evaluate each request on a case-by-case basis.\n\n    Section 3: Work Hours and Availability\n\n    Remote workers are expected to maintain standard business hours. Daily stand-ups and\n    weekly team meetings are mandatory. Communication must occ",
+      "start_pos": 450,
+      "end_pos": 950,
+      "size": 500,
+      "department": "HR",
+      "category": "Policy",
+      "version": "2"
+    },
+    {
+      "chunk_id": "f4eee494-da3e-482f-a5f3-7b43604e554c",
+      "document_name": "v2_remote_policy",
+      "strategy": "fixed_size",
+      "text": "eam meetings are mandatory. Communication must occur via Slack, email, or\n    scheduled video calls.\n\n    Section 4: Equipment and Technology\n\n    The company provides or reimburses for necessary equipment including laptop, monitor,\n    keyboard, and mouse. Internet connectivity must support video conferencing and large\n    file transfers. Backup internet (e.g., mobile hotspot) is recommended.\n    ",
+      "start_pos": 900,
+      "end_pos": 1301,
+      "size": 401,
+      "department": "HR",
+      "category": "Policy",
+      "version": "2"
+    }
+  ]
+}

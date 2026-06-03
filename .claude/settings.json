@@ -7,7 +7,9 @@
       "Bash(python -m pytest test_pipeline.py -v)",
       "Bash(python test_pipeline.py -v)",
       "Bash(python -c \"import json; data = json.load\\(open\\('output/ingestion_output_semantic.json'\\)\\); print\\('Fixed output total chunks:', 6\\); print\\('Semantic output first chunk text:'\\); print\\(data['chunks'][0]['text'][:150]\\)\")",
-      "Bash(python verify_pipeline.py)"
+      "Bash(python verify_pipeline.py)",
+      "Bash(cp -r data/* ingestion_pipeline/data/)",
+      "Bash(cp -r output/* ingestion_pipeline/output/)"
     ]
   }
 }
