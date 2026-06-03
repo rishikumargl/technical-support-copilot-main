@@ -184,6 +184,31 @@
   border-color: rgba(96, 165, 250, 0.5);
 }
 
+.status-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.status-section.warning {
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  color: #eab308;
+}
+
+.status-icon {
+  font-size: 16px;
+}
+
+.status-message {
+  font-weight: 500;
+}
+
 .confidence-section {
   display: flex;
   align-items: center;

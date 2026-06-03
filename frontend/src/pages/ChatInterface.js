@@ -72,7 +72,9 @@ function ChatInterface() {
         content: response.answer || response.response || 'No answer available.',
         sources: response.sources || [],
         strategy: filters.strategy,
-        confidence: response.confidence_score || 0.8,
+        confidence: response.confidence_score,
+        status: response.status,
+        message: response.message,
         timestamp: new Date().toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',

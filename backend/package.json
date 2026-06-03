@@ -1,0 +1,35 @@
+{
+  "name": "rag-assistant-backend",
+  "version": "1.0.0",
+  "description": "Production-ready backend for Technical Support Copilot RAG Assistant",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest",
+    "migrate": "node src/migrations/run.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "pg": "^8.11.2",
+    "pg-format": "^1.0.4",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.0",
+    "joi": "^17.11.0",
+    "axios": "^1.6.2",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.10.0",
+    "compression": "^1.7.4",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
