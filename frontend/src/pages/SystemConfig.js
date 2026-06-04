@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FiSave, FiRefreshCw } from 'react-icons/fi';
 import { getCacheStats, clearCache } from '../api/ragApi';
+import toastManager from '../utils/toastManager';
 import './SystemConfig.css';
 
 function SystemConfig() {
-  const [cacheStats, setCacheStats] = useState(null);
-  const [config, setConfig] = useState({
+  const defaultConfig = {
     enableCaching: true,
     cacheExpiry: 3600,
     maxCacheSize: 100,
@@ -14,6 +14,12 @@ function SystemConfig() {
     chunkingStrategy: 'semantic',
     chunkSize: 512,
     overlapSize: 128,
+  };
+
+  const [cacheStats, setCacheStats] = useState(null);
+  const [config, setConfig] = useState(() => {
+    const saved = localStorage.getItem('systemConfig');
+    return saved ? JSON.parse(saved) : defaultConfig;
   });
   const [loading, setLoading] = useState(false);
 
@@ -21,13 +27,20 @@ function SystemConfig() {
     fetchCacheStats();
   }, []);
 
+  // Save config to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('systemConfig', JSON.stringify(config));
+  }, [config]);
+
   const fetchCacheStats = async () => {
     try {
       setLoading(true);
       const stats = await getCacheStats();
       setCacheStats(stats);
+      toastManager.success('Cache stats refreshed');
     } catch (error) {
       console.error('Error fetching cache stats:', error);
+      toastManager.error(`Failed to fetch cache stats: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -38,15 +51,17 @@ function SystemConfig() {
       try {
         await clearCache();
         await fetchCacheStats();
+        toastManager.success('Cache cleared successfully');
       } catch (error) {
         console.error('Error clearing cache:', error);
+        toastManager.error(`Failed to clear cache: ${error.message}`);
       }
     }
   };
 
   const handleSaveConfig = () => {
     console.log('Saving configuration:', config);
-    alert('Configuration saved successfully!');
+    toastManager.success('Configuration saved successfully');
   };
 
   return (

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
+import Toast from './components/Toast';
 import ChatInterface from './pages/ChatInterface';
 import DocumentManager from './pages/DocumentManager';
 import Analytics from './pages/Analytics';
@@ -31,6 +32,7 @@ function App() {
             </Routes>
           </main>
         </div>
+        <Toast />
       </div>
     </Router>
   );

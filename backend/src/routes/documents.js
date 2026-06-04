@@ -41,6 +41,14 @@ router.post('/upload', upload.single('file'), async (req, res, next) => {
 
     logger.info('Document uploaded', { documentId: document.id, fileName: name });
 
+    // Note: Documents are indexed when RAG server starts.
+    // Newly uploaded documents are searchable via BM25 keyword search immediately.
+    // To enable vector search on new documents, restart the RAG server.
+    logger.info('Document uploaded - will be indexed on RAG server restart', {
+      documentId: document.id,
+      fileName: name
+    });
+
     res.status(201).json({
       document_id: document.id,
       name: document.name,

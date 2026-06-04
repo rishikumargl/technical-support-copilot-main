@@ -1,6 +1,58 @@
 import React, { useState } from 'react';
 import { FiThumbsUp, FiThumbsDown, FiCopy, FiCheck } from 'react-icons/fi';
+import { InlineMath, BlockMath } from 'react-katex';
 import './ChatMessage.css';
+
+// Parse content to extract and render LaTeX
+function renderContentWithMath(content) {
+  if (!content) return null;
+
+  const parts = [];
+  let lastIndex = 0;
+
+  // Match both $$ (block) and $ (inline) delimiters
+  const regex = /(\$\$[\s\S]*?\$\$)|(\$[^\$\n]+\$)/g;
+  let match;
+
+  while ((match = regex.exec(content)) !== null) {
+    // Add text before the math
+    if (match.index > lastIndex) {
+      parts.push({
+        type: 'text',
+        value: content.substring(lastIndex, match.index),
+      });
+    }
+
+    // Determine if it's block or inline math
+    if (match[1]) {
+      // Block math ($$...$$)
+      const formula = match[1].slice(2, -2);
+      parts.push({
+        type: 'block',
+        value: formula,
+      });
+    } else {
+      // Inline math ($...$)
+      const formula = match[2].slice(1, -1);
+      parts.push({
+        type: 'inline',
+        value: formula,
+      });
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < content.length) {
+    parts.push({
+      type: 'text',
+      value: content.substring(lastIndex),
+    });
+  }
+
+  return parts;
+}
 
 function ChatMessage({ message, onFeedback }) {
   const [copiedId, setCopiedId] = useState(null);
@@ -38,7 +90,16 @@ function ChatMessage({ message, onFeedback }) {
 
       <div className="message-content">
         <div className="response-text">
-          <p>{message.content}</p>
+          {renderContentWithMath(message.content).map((part, idx) => {
+            if (part.type === 'text') {
+              return <span key={idx}>{part.value}</span>;
+            } else if (part.type === 'inline') {
+              return <InlineMath key={idx}>{part.value}</InlineMath>;
+            } else if (part.type === 'block') {
+              return <BlockMath key={idx}>{part.value}</BlockMath>;
+            }
+            return null;
+          })}
         </div>
 
         {message.sources && message.sources.length > 0 && (

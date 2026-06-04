@@ -1,0 +1,96 @@
+# ============================================
+# GENERAL
+# ============================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+*.tmp
+*.temp
+
+# ============================================
+# IDE & EDITOR
+# ============================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ============================================
+# BACKEND (Node.js)
+# ============================================
+backend/node_modules/
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+backend/pnpm-debug.log*
+backend/dist/
+backend/build/
+backend/.next/
+backend/out/
+backend/uploads/
+backend/logs/
+backend/.env
+backend/.env.local
+backend/.env.*.local
+!backend/.env.example
+
+# ============================================
+# FRONTEND (React)
+# ============================================
+frontend/node_modules/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/build/
+frontend/dist/
+frontend/coverage/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/.eslintcache
+!frontend/.env.example
+
+# ============================================
+# RAG LAYER (Python)
+# ============================================
+rag-layer/__pycache__/
+rag-layer/*.py[cod]
+rag-layer/*$py.class
+rag-layer/*.so
+rag-layer/.Python
+rag-layer/build/
+rag-layer/develop-eggs/
+rag-layer/dist/
+rag-layer/downloads/
+rag-layer/eggs/
+rag-layer/.eggs/
+rag-layer/lib/
+rag-layer/lib64/
+rag-layer/parts/
+rag-layer/sdist/
+rag-layer/var/
+rag-layer/wheels/
+rag-layer/*.egg-info/
+rag-layer/.installed.cfg
+rag-layer/*.egg
+rag-layer/venv/
+rag-layer/ENV/
+rag-layer/env/
+rag-layer/.venv
+rag-layer/*.log
+rag-layer/*.pot
+rag-layer/qdrant_storage/
+rag-layer/*.db
+rag-layer/*.sqlite
+rag-layer/.pytest_cache/
+rag-layer/.coverage
+rag-layer/htmlcov/
+rag-layer/output/
+rag-layer/vector_db_init_result.json
+rag-layer/.env
+rag-layer/.env.local
+rag-layer/.env.*.local
+!rag-layer/.env.example

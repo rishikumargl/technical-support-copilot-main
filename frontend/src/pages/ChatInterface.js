@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FiSend, FiSliders, FiLoader } from 'react-icons/fi';
 import ChatMessage from '../components/ChatMessage';
 import { queryRAGAdvanced, submitFeedback } from '../api/ragApi';
+import toastManager from '../utils/toastManager';
+import 'katex/dist/katex.min.css';
 import './ChatInterface.css';
 
 function ChatInterface() {
@@ -82,6 +84,7 @@ function ChatInterface() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      toastManager.success('Query processed successfully');
     } catch (error) {
       console.error('Query error:', error);
       const errorMessage = {
@@ -96,6 +99,7 @@ function ChatInterface() {
       };
 
       setMessages((prev) => [...prev, errorMessage]);
+      toastManager.error(`Failed to process query: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -108,8 +112,10 @@ function ChatInterface() {
         comment: '',
       });
       console.log('Feedback submitted:', feedback);
+      toastManager.success('Feedback submitted successfully');
     } catch (error) {
       console.error('Feedback error:', error);
+      toastManager.error('Failed to submit feedback');
     }
   };
 

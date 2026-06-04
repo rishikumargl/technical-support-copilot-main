@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiLoader, FiRefreshCw } from 'react-icons/fi';
 import { getSystemStats, getFeedbackAnalytics } from '../api/ragApi';
+import toastManager from '../utils/toastManager';
 import './Analytics.css';
 
 function Analytics() {
@@ -21,8 +22,10 @@ function Analytics() {
       ]);
       setStats(statsData);
       setFeedback(feedbackData);
+      toastManager.success('Analytics refreshed successfully');
     } catch (error) {
       console.error('Analytics error:', error);
+      toastManager.error(`Failed to refresh analytics: ${error.message}`);
     } finally {
       setLoading(false);
     }

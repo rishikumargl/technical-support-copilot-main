@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiUpload, FiTrash2, FiLoader, FiX, FiFileText } from 'react-icons/fi';
 import { getDocuments, uploadDocument, deleteDocument, getDocumentChunks } from '../api/ragApi';
+import toastManager from '../utils/toastManager';
 import './DocumentManager.css';
 
 function DocumentManager() {
@@ -42,8 +43,10 @@ function DocumentManager() {
       setSelectedFile(null);
       setMetadata({ department: '', category: '', version: '1.0' });
       await fetchDocuments();
+      toastManager.success(`${selectedFile.name} uploaded successfully`);
     } catch (error) {
       console.error('Upload error:', error);
+      toastManager.error(`Failed to upload document: ${error.message}`);
     } finally {
       setUploading(false);
     }
@@ -54,8 +57,10 @@ function DocumentManager() {
       try {
         await deleteDocument(docId);
         await fetchDocuments();
+        toastManager.success('Document deleted successfully');
       } catch (error) {
         console.error('Delete error:', error);
+        toastManager.error(`Failed to delete document: ${error.message}`);
       }
     }
   };
@@ -66,9 +71,11 @@ function DocumentManager() {
     try {
       const data = await getDocumentChunks(doc.id);
       setViewingChunks({ ...doc, chunks: data.chunks || [] });
+      toastManager.info(`Loaded ${(data.chunks || []).length} chunks`);
     } catch (error) {
       console.error('Error fetching chunks:', error);
       setViewingChunks({ ...doc, chunks: [], error: 'Failed to load chunks' });
+      toastManager.error('Failed to load document chunks');
     } finally {
       setChunksLoading(false);
     }

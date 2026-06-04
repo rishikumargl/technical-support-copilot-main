@@ -25,12 +25,7 @@ const HOST = process.env.HOST || 'localhost';
 app.use(helmet());
 app.use(compression());
 
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(cors());
 
 const limiter = rateLimit({
   windowMs: parseInt(process.env.API_RATE_LIMIT_WINDOW) || 900000,
