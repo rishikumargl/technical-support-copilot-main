@@ -149,11 +149,19 @@ class SemanticChunking(ChunkingStrategy):
 class ChunkingPipeline:
     """Unified pipeline for document chunking with strategy selection."""
 
-    def __init__(self, strategy: Literal["fixed", "semantic"] = "fixed"):
+    def __init__(self, strategy: Literal["fixed", "semantic", "adaptive"] = "fixed"):
         if strategy == "fixed":
             self.strategy = FixedSizeChunking(chunk_size=500, overlap=50)
         elif strategy == "semantic":
             self.strategy = SemanticChunking(target_size=500)
+        elif strategy == "adaptive":
+            try:
+                from adaptive_chunking import AdaptiveChunking
+                self.strategy = AdaptiveChunking(max_chunk_size=500)
+            except ImportError:
+                logger.warning("adaptive_chunking not available, falling back to fixed")
+                self.strategy = FixedSizeChunking(chunk_size=500, overlap=50)
+                strategy = "fixed"
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
 

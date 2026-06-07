@@ -160,9 +160,11 @@ class RAGIntegrationPipeline:
         category: Optional[str] = None,
         top_k: int = 5,
         search_type: str = "hybrid",
+        min_score: float = 0.0,
+        use_reranking: bool = True,
     ) -> List[Dict]:
         """
-        Query the knowledge base using hybrid search.
+        Query the knowledge base using hybrid search with optional reranking.
 
         Args:
             question: The question to ask
@@ -170,6 +172,8 @@ class RAGIntegrationPipeline:
             category: Optional category filter (Policy, Ticket, Guide)
             top_k: Number of results to return
             search_type: "hybrid", "dense", or "sparse"
+            min_score: Minimum confidence score threshold (0.0-1.0)
+            use_reranking: If True, apply semantic reranking (Phase 2)
 
         Returns:
             List of relevant chunks with scores
@@ -177,6 +181,8 @@ class RAGIntegrationPipeline:
         logger.info(f"\nQUERY: {question}")
         if department or category:
             logger.info(f"FILTERS: department={department}, category={category}")
+        if min_score > 0:
+            logger.info(f"MIN_SCORE: {min_score}")
 
         filters = {}
         if department:
@@ -189,6 +195,8 @@ class RAGIntegrationPipeline:
             filters=filters if filters else None,
             search_type=search_type,
             top_k=top_k,
+            min_score=min_score,
+            use_reranking=use_reranking,
         )
 
         logger.info(f"RESULTS: Found {len(results)} relevant chunks\n")

@@ -26,6 +26,15 @@ CORS(app)
 # Global RAG pipeline instance
 rag_pipeline = None
 
+# Import text processor for grammar and formatting
+try:
+    from text_processor import TextProcessor
+    text_processor = TextProcessor()
+    logger.info("Text processor initialized for grammar correction")
+except (ImportError, Exception) as e:
+    text_processor = None
+    logger.warning(f"Text processor not available: {e} - responses may have formatting issues")
+
 
 @app.route('/health', methods=['GET'])
 def health():
@@ -39,7 +48,7 @@ def health():
 
 @app.route('/api/rag/query', methods=['POST'])
 def query():
-    """Query the RAG system"""
+    """Query the RAG system with support for various search and filtering options"""
     try:
         data = request.json
         question = data.get('question')
@@ -53,12 +62,14 @@ def query():
                 'message': 'Please initialize the RAG system first'
             }), 503
 
-        # Extract options
+        # Extract options with Phase 1, 2, and 3 improvements
         options = {
             'top_k': data.get('top_k', 5),
             'search_type': data.get('search_type', 'hybrid'),
             'department': data.get('department'),
             'category': data.get('category'),
+            'min_score': data.get('min_score', 0.0),  # Phase 1: confidence filtering
+            'use_reranking': data.get('use_reranking', True),  # Phase 2: semantic reranking
         }
 
         logger.info(f"Query: {question} | Options: {options}")
@@ -66,28 +77,64 @@ def query():
         # Query RAG
         results = rag_pipeline.query(question, **options)
 
+        # Get score key (rerank or combined)
+        score_key = 'rerank_score' if results and 'rerank_score' in results[0] else 'combined_score'
+
+        # Process results through text processor for clean grammar and formatting
+        processed_results = results
+        answer_text = results[0]['text'] if results else 'No answer found'
+
+        if text_processor:
+            try:
+                # Clean the answer text
+                answer_text = text_processor.format_answer(answer_text)
+
+                # Clean each source chunk
+                processed_results = text_processor.process_response(results)
+            except Exception as processor_error:
+                logger.warning(f"Text processor error: {processor_error}. Using raw results.")
+                # Fall back to raw results if processor fails
+                processed_results = results
+
         # Format response
-        response = {
-            'success': True,
-            'question': question,
-            'answer': results[0]['text'] if results else 'No answer found',
-            'sources': [
-                {
+        sources = []
+        try:
+            for r in processed_results:
+                chunk_text = r.get('text', '')[:200]
+                try:
+                    if text_processor:
+                        chunk_text = text_processor.process_chunk(chunk_text)
+                except Exception as e:
+                    logger.warning(f"Chunk processing error: {e}")
+                    # Use raw chunk text on error
+
+                sources.append({
                     'document_name': r.get('document_name'),
-                    'chunk': r.get('text', '')[:200],
-                    'relevance_score': r.get('combined_score', 0),
-                    'confidence': r.get('combined_score', 0),
+                    'chunk': chunk_text,
+                    'relevance_score': r.get(score_key, 0),
+                    'confidence': r.get(score_key, 0),
+                    'dense_score': r.get('dense_score'),
+                    'sparse_score': r.get('sparse_score'),
+                    'rerank_score': r.get('rerank_score'),
                     'metadata': {
                         'department': r.get('department'),
                         'category': r.get('category'),
                         'version': r.get('version'),
                     }
-                }
-                for r in results
-            ],
-            'confidence_score': results[0].get('combined_score', 0) if results else 0,
+                })
+        except Exception as e:
+            logger.error(f"Error building sources: {e}")
+
+        response = {
+            'success': True,
+            'question': question,
+            'answer': answer_text,
+            'sources': sources,
+            'confidence_score': results[0].get(score_key, 0) if results else 0,
             'status': 'RAG_IMPLEMENTED',
             'message': 'Successfully retrieved from RAG system',
+            'retrieval_method': f"{options['search_type']}_with_reranking" if options['use_reranking'] else options['search_type'],
+            'grammar_corrected': text_processor is not None,
         }
 
         return jsonify(response)
@@ -103,7 +150,7 @@ def query():
 
 @app.route('/api/rag/query-advanced', methods=['POST'])
 def query_advanced():
-    """Advanced query with more options"""
+    """Advanced query with comprehensive retrieval options"""
     try:
         data = request.json
         question = data.get('query')
@@ -117,12 +164,15 @@ def query_advanced():
                 'message': 'Please initialize the RAG system first'
             }), 503
 
-        # Extract all options
+        # Extract all options including Phase 1, 2, 3 improvements
+        filters_dict = data.get('filters', {})
         options = {
             'top_k': data.get('top_k', 5),
             'search_type': data.get('retrieval_strategy', 'hybrid'),
-            'department': data.get('filters', {}).get('department'),
-            'category': data.get('filters', {}).get('category'),
+            'department': filters_dict.get('department'),
+            'category': filters_dict.get('category'),
+            'min_score': data.get('min_score', 0.0),
+            'use_reranking': data.get('use_reranking', True),
         }
 
         logger.info(f"Advanced Query: {question} | Options: {options}")
@@ -130,28 +180,59 @@ def query_advanced():
         # Query RAG
         results = rag_pipeline.query(question, **options)
 
+        # Get score key (rerank or combined)
+        score_key = 'rerank_score' if results and 'rerank_score' in results[0] else 'combined_score'
+
+        # Process results through text processor
+        processed_results = results
+        answer_text = results[0]['text'] if results else 'No answer found'
+
+        if text_processor:
+            try:
+                answer_text = text_processor.format_answer(answer_text)
+                processed_results = text_processor.process_response(results)
+            except Exception as processor_error:
+                logger.warning(f"Text processor error in advanced query: {processor_error}. Using raw results.")
+                processed_results = results
+
         # Format response
-        response = {
-            'success': True,
-            'answer': results[0]['text'] if results else 'No answer found',
-            'sources': [
-                {
+        sources = []
+        try:
+            for r in processed_results:
+                chunk_text = r.get('text', '')[:300]
+                try:
+                    if text_processor:
+                        chunk_text = text_processor.process_chunk(chunk_text)
+                except Exception as e:
+                    logger.warning(f"Chunk processing error: {e}")
+
+                sources.append({
                     'document_name': r.get('document_name'),
-                    'chunk': r.get('text', '')[:300],
-                    'relevance_score': r.get('combined_score', 0),
+                    'chunk': chunk_text,
+                    'relevance_score': r.get(score_key, 0),
+                    'dense_score': r.get('dense_score'),
+                    'sparse_score': r.get('sparse_score'),
+                    'rerank_score': r.get('rerank_score'),
                     'metadata': {
                         'department': r.get('department'),
                         'category': r.get('category'),
                         'version': r.get('version'),
                     }
-                }
-                for r in results
-            ],
-            'confidence_score': results[0].get('combined_score', 0) if results else 0,
+                })
+        except Exception as e:
+            logger.error(f"Error building sources: {e}")
+
+        response = {
+            'success': True,
+            'query': question,
+            'answer': answer_text,
+            'sources': sources,
+            'confidence_score': results[0].get(score_key, 0) if results else 0,
+            'result_count': len(results),
             'status': 'RAG_IMPLEMENTED',
             'message': 'Successfully retrieved from RAG system with advanced options',
-            'retrieval_method': options['search_type'],
-            'search_time_ms': 0,  # Would need to track actual timing
+            'retrieval_method': f"{options['search_type']}_with_reranking" if options['use_reranking'] else options['search_type'],
+            'grammar_corrected': text_processor is not None,
         }
 
         return jsonify(response)
@@ -167,15 +248,20 @@ def query_advanced():
 
 @app.route('/api/rag/initialize', methods=['POST'])
 def initialize():
-    """Initialize the RAG system"""
+    """Initialize the RAG system with optional Phase 2/3 features"""
     try:
         global rag_pipeline
 
         data = request.json or {}
         source_dir = data.get('source_dir', 'ingestion_pipeline/data')
         chunking_strategy = data.get('chunking_strategy', 'fixed')
+        use_ensemble = data.get('use_ensemble', False)  # Phase 3
+        enable_query_expansion = data.get('enable_query_expansion', False)  # Phase 3
 
         logger.info(f"Initializing RAG system from {source_dir}")
+        logger.info(f"  Chunking strategy: {chunking_strategy}")
+        logger.info(f"  Ensemble embeddings: {use_ensemble}")
+        logger.info(f"  Query expansion: {enable_query_expansion}")
 
         # Import and initialize
         from integration_pipeline import RAGIntegrationPipeline
@@ -184,6 +270,14 @@ def initialize():
             source_dir=source_dir,
             chunking_strategy=chunking_strategy,
         )
+
+        # Phase 3: Setup ensemble if requested
+        if use_ensemble:
+            rag_pipeline.search_engine.setup_ensemble(use_ensemble=True)
+
+        # Phase 3: Setup query expansion if requested
+        if enable_query_expansion:
+            rag_pipeline.search_engine.setup_query_expansion()
 
         # Run full pipeline
         result = rag_pipeline.run_full_pipeline()
@@ -194,6 +288,11 @@ def initialize():
             'success': True,
             'message': 'RAG system initialized successfully',
             'result': result,
+            'features': {
+                'chunking_strategy': chunking_strategy,
+                'ensemble_embeddings': use_ensemble,
+                'query_expansion': enable_query_expansion,
+            }
         })
 
     except Exception as e:

@@ -116,9 +116,12 @@ def ask(
     top_k: int = 5,
     search_type: str = "hybrid",
     print_results: bool = True,
+    min_score: float = 0.0,
+    use_reranking: bool = True,
+    use_query_expansion: bool = False,
 ):
     """
-    Ask a question to the knowledge base.
+    Ask a question to the knowledge base with advanced retrieval options.
 
     Args:
         question: Your question
@@ -127,6 +130,9 @@ def ask(
         top_k: Number of results to return
         search_type: "hybrid", "dense", or "sparse"
         print_results: Whether to print results to console
+        min_score: Minimum confidence score threshold (0.0-1.0)
+        use_reranking: If True, apply semantic reranking (Phase 2)
+        use_query_expansion: If True, expand query with variations (Phase 3)
 
     Returns:
         List of results with sources and confidence scores
@@ -149,14 +155,20 @@ def ask(
         print(f"QUESTION: {question}")
         if filters:
             print(f"FILTERS: {filters}")
+        if min_score > 0:
+            print(f"MIN_SCORE: {min_score}")
+        print(f"OPTIONS: reranking={use_reranking}, expansion={use_query_expansion}")
         print("\nSEARCHING...\n")
 
-    # Search
+    # Search with all Phase 1, 2, 3 options
     results = system["search"].retrieve_relevant_chunks(
         query=question,
         filters=filters if filters else None,
         search_type=search_type,
         top_k=top_k,
+        min_score=min_score,
+        use_reranking=use_reranking,
+        use_query_expansion=use_query_expansion,
     )
 
     if print_results:
@@ -171,9 +183,27 @@ def ask(
         for i, result in enumerate(results, 1):
             print(f"{i}. {result['document_name']} (v{result['version']})")
             print(f"   Category: {result['category']} | Department: {result['department']}")
-            print(f"   Confidence: {result['combined_score']:.1%}")
+
+            # Show most relevant score
+            if 'rerank_score' in result:
+                print(f"   Confidence (Reranked): {result['rerank_score']:.1%}")
+            else:
+                print(f"   Confidence (Hybrid): {result.get('combined_score', 0):.1%}")
+
             print(f"\n   {result['text'][:150]}...\n")
-            print(f"   Scores: Combined={result['combined_score']:.3f}, Dense={result['dense_score']:.3f}, Sparse={result['sparse_score']:.3f}\n")
+
+            # Show all available scores
+            scores_str = f"Combined={result.get('combined_score', 0):.3f}"
+            if result.get('dense_score') is not None:
+                scores_str += f", Dense={result['dense_score']:.3f}"
+            if result.get('sparse_score') is not None:
+                scores_str += f", Sparse={result['sparse_score']:.3f}"
+            if result.get('rerank_score') is not None:
+                scores_str += f", Rerank={result['rerank_score']:.3f}"
+            if result.get('expansion_count') is not None:
+                scores_str += f", Expansion_count={result['expansion_count']}"
+
+            print(f"   Scores: {scores_str}\n")
             print("-" * 70 + "\n")
 
     return results
