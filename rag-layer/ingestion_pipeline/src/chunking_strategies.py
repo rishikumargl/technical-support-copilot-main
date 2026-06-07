@@ -22,16 +22,81 @@ class ChunkingStrategy(ABC):
         pass
 
 
-class FixedSizeChunking(ChunkingStrategy):
-    """Fixed-size chunking with overlap."""
+class IntelligentChunking(ChunkingStrategy):
+    """Intelligent chunking that respects sentence and paragraph boundaries."""
 
-    def __init__(self, chunk_size: int = 500, overlap: int = 50):
+    def __init__(self, chunk_size: int = 800, min_chunk_size: int = 300):
+        self.chunk_size = chunk_size
+        self.min_chunk_size = min_chunk_size
+        logger.info(f"IntelligentChunking initialized: size={chunk_size}, min={min_chunk_size}")
+
+    def chunk(self, text: str, document_name: str) -> List[Dict]:
+        """Split text intelligently by paragraphs and sentences."""
+        chunks = []
+
+        # Split by paragraphs first
+        paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
+
+        current_chunk = []
+        current_size = 0
+        start_pos = 0
+
+        for para in paragraphs:
+            para_size = len(para)
+
+            # If adding this paragraph would exceed chunk_size and we have content
+            if current_size + para_size > self.chunk_size and current_chunk:
+                # Create chunk from accumulated paragraphs
+                chunk_text = '\n\n'.join(current_chunk)
+                if len(chunk_text) >= self.min_chunk_size:
+                    chunk_dict = {
+                        "chunk_id": str(uuid.uuid4()),
+                        "document_name": document_name,
+                        "strategy": "intelligent",
+                        "text": chunk_text,
+                        "start_pos": start_pos,
+                        "end_pos": start_pos + len(chunk_text),
+                        "size": len(chunk_text),
+                    }
+                    chunks.append(chunk_dict)
+                    start_pos += len(chunk_text) + 2  # +2 for \n\n
+
+                current_chunk = []
+                current_size = 0
+
+            # Add paragraph to current chunk
+            current_chunk.append(para)
+            current_size += para_size + 2  # +2 for \n\n
+
+        # Add remaining content
+        if current_chunk:
+            chunk_text = '\n\n'.join(current_chunk)
+            if len(chunk_text) >= self.min_chunk_size:
+                chunk_dict = {
+                    "chunk_id": str(uuid.uuid4()),
+                    "document_name": document_name,
+                    "strategy": "intelligent",
+                    "text": chunk_text,
+                    "start_pos": start_pos,
+                    "end_pos": start_pos + len(chunk_text),
+                    "size": len(chunk_text),
+                }
+                chunks.append(chunk_dict)
+
+        logger.info(f"Created {len(chunks)} intelligent chunks from {document_name}")
+        return chunks
+
+
+class FixedSizeChunking(ChunkingStrategy):
+    """Fixed-size chunking with overlap (legacy)."""
+
+    def __init__(self, chunk_size: int = 800, overlap: int = 100):
         self.chunk_size = chunk_size
         self.overlap = overlap
         logger.info(f"FixedSizeChunking initialized: size={chunk_size}, overlap={overlap}")
 
     def chunk(self, text: str, document_name: str) -> List[Dict]:
-        """Split text into fixed-size chunks with overlap."""
+        """Split text into fixed-size chunks with overlap - IMPROVED for better context."""
         chunks = []
         step = self.chunk_size - self.overlap
 
@@ -39,6 +104,18 @@ class FixedSizeChunking(ChunkingStrategy):
             chunk_text = text[i : i + self.chunk_size]
 
             if not chunk_text.strip():
+                continue
+
+            # Try to break at sentence boundary
+            if len(chunk_text) == self.chunk_size:
+                # Look for last period, question mark, or exclamation
+                for end_char in ['. ', '? ', '! ']:
+                    last_pos = chunk_text.rfind(end_char)
+                    if last_pos > self.chunk_size * 0.75:  # At least 75% of chunk
+                        chunk_text = chunk_text[:last_pos + 1]
+                        break
+
+            if len(chunk_text.strip()) < 50:  # Skip very short chunks
                 continue
 
             chunk_dict = {
@@ -149,19 +226,21 @@ class SemanticChunking(ChunkingStrategy):
 class ChunkingPipeline:
     """Unified pipeline for document chunking with strategy selection."""
 
-    def __init__(self, strategy: Literal["fixed", "semantic", "adaptive"] = "fixed"):
-        if strategy == "fixed":
-            self.strategy = FixedSizeChunking(chunk_size=500, overlap=50)
+    def __init__(self, strategy: Literal["fixed", "semantic", "adaptive", "intelligent"] = "intelligent"):
+        if strategy == "intelligent":
+            self.strategy = IntelligentChunking(chunk_size=800, min_chunk_size=300)
+        elif strategy == "fixed":
+            self.strategy = FixedSizeChunking(chunk_size=800, overlap=100)
         elif strategy == "semantic":
-            self.strategy = SemanticChunking(target_size=500)
+            self.strategy = SemanticChunking(target_size=800)
         elif strategy == "adaptive":
             try:
                 from adaptive_chunking import AdaptiveChunking
-                self.strategy = AdaptiveChunking(max_chunk_size=500)
+                self.strategy = AdaptiveChunking(max_chunk_size=800)
             except ImportError:
-                logger.warning("adaptive_chunking not available, falling back to fixed")
-                self.strategy = FixedSizeChunking(chunk_size=500, overlap=50)
-                strategy = "fixed"
+                logger.warning("adaptive_chunking not available, falling back to intelligent")
+                self.strategy = IntelligentChunking(chunk_size=800, min_chunk_size=300)
+                strategy = "intelligent"
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
 
