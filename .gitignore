@@ -94,3 +94,7 @@ rag-layer/.env
 rag-layer/.env.local
 rag-layer/.env.*.local
 !rag-layer/.env.example
+rag-layer/ingestion_pipeline/data/*.pdf
+rag-layer/ingestion_pipeline/data/*.txt
+rag-layer/ingestion_pipeline/data/*.docx
+rag-layer/ingestion_pipeline/data/*.doc

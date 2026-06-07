@@ -4,13 +4,11 @@ RAG Server - HTTP API bridge for the RAG layer
 Allows backend and frontend to communicate with RAG system via REST API
 """
 
-import json
 import logging
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from pathlib import Path
-import sys
+import threading
 
 # Setup logging
 logging.basicConfig(
@@ -26,6 +24,13 @@ CORS(app)
 # Global RAG pipeline instance
 rag_pipeline = None
 
+# Global state for document processing
+document_processing_lock = threading.Lock()
+is_processing_documents = False
+last_processed_time = None
+processing_complete_event = threading.Event()
+processing_complete_event.set()  # Initially set (not processing)
+
 # Import text processor for grammar and formatting
 try:
     from text_processor import TextProcessor
@@ -34,6 +39,59 @@ try:
 except (ImportError, Exception) as e:
     text_processor = None
     logger.warning(f"Text processor not available: {e} - responses may have formatting issues")
+
+
+def process_new_documents_background():
+    """Background task to process and index new documents without server restart."""
+    global rag_pipeline, is_processing_documents, last_processed_time, processing_complete_event
+
+    with document_processing_lock:
+        if is_processing_documents:
+            logger.info("Document processing already in progress...")
+            return
+
+        is_processing_documents = True
+        processing_complete_event.clear()  # Mark as processing
+
+    try:
+        if rag_pipeline is None:
+            logger.warning("RAG pipeline not initialized yet. Skipping document processing.")
+            return
+
+        source_dir = 'ingestion_pipeline/data'
+        logger.info(f"Starting background document processing from {source_dir}")
+
+        # Re-run the full pipeline to index documents
+        try:
+            result = rag_pipeline.run_full_pipeline()
+            logger.info(f"Document processing completed successfully: {result}")
+            last_processed_time = result
+        except Exception as pipeline_error:
+            logger.error(f"Error during pipeline re-run: {pipeline_error}", exc_info=True)
+
+    except Exception as e:
+        logger.error(f"Background document processing failed: {e}", exc_info=True)
+    finally:
+        is_processing_documents = False
+        processing_complete_event.set()  # Mark as complete
+        logger.info("Document processing task completed")
+
+
+def trigger_document_processing():
+    """Trigger background document processing in a separate thread."""
+    try:
+        # Start processing in background thread so we don't block the request
+        processing_thread = threading.Thread(
+            target=process_new_documents_background,
+            daemon=True,
+            name="DocumentProcessor"
+        )
+        processing_thread.start()
+        logger.info("Document processing triggered in background")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to trigger document processing: {e}")
+        return False
 
 
 @app.route('/health', methods=['GET'])
@@ -303,6 +361,81 @@ def initialize():
         }), 500
 
 
+@app.route('/api/rag/status', methods=['GET'])
+def status():
+    """Get current RAG system status including document processing state."""
+    try:
+        return jsonify({
+            'success': True,
+            'status': {
+                'rag_initialized': rag_pipeline is not None,
+                'processing_documents': is_processing_documents,
+                'last_processed': last_processed_time,
+                'service': 'rag-server'
+            }
+        })
+    except Exception as e:
+        logger.error(f"Status error: {e}")
+        return jsonify({
+            'error': str(e),
+            'success': False,
+        }), 500
+
+
+@app.route('/api/rag/reindex', methods=['POST'])
+def reindex():
+    """Manually trigger document reindexing and wait for completion."""
+    try:
+        if rag_pipeline is None:
+            return jsonify({
+                'error': 'RAG pipeline not initialized',
+                'success': False,
+            }), 503
+
+        if is_processing_documents:
+            return jsonify({
+                'success': False,
+                'error': 'Document processing already in progress. Please wait.',
+                'status': 'already_processing'
+            }), 409
+
+        logger.info("Manual reindex triggered by user")
+        processing_started = trigger_document_processing()
+
+        if not processing_started:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to start reindexing',
+                'status': 'indexing_failed'
+            }), 500
+
+        # Wait for reindexing to complete (with timeout of 5 minutes)
+        logger.info("Waiting for documents to be reindexed...")
+        processing_complete = processing_complete_event.wait(timeout=300)  # 5 minute timeout
+
+        if processing_complete:
+            logger.info("Document reindexing completed successfully")
+            return jsonify({
+                'success': True,
+                'message': 'Documents have been reindexed and are searchable.',
+                'status': 'reindex_complete'
+            }), 200
+        else:
+            logger.warning("Document reindexing timed out after 5 minutes")
+            return jsonify({
+                'success': False,
+                'error': 'Document reindexing timed out after 5 minutes',
+                'status': 'timeout'
+            }), 408
+
+    except Exception as e:
+        logger.error(f"Reindex error: {e}")
+        return jsonify({
+            'error': str(e),
+            'success': False,
+        }), 500
+
+
 @app.route('/api/rag/stats', methods=['GET'])
 def stats():
     """Get RAG system statistics"""
@@ -330,24 +463,58 @@ def stats():
 
 @app.route('/api/rag/ingest', methods=['POST'])
 def ingest():
-    """Document ingestion endpoint - note: documents are indexed at RAG server startup.
-    To index new documents, restart the RAG server.
-    For now, newly uploaded documents are searchable via BM25 keyword search."""
+    """Document ingestion endpoint - processes documents in background and waits for completion.
+    Response is sent only after documents are indexed and searchable."""
     try:
         data = request.json or {}
         document_id = data.get('document_id')
 
-        logger.info(f"Document {document_id} uploaded. Note: will be indexed on next RAG server restart.")
+        if not document_id:
+            return jsonify({
+                'error': 'document_id is required',
+                'success': False,
+            }), 400
 
-        return jsonify({
-            'success': True,
-            'message': 'Document received. Restart RAG server to index it with vector embeddings.',
-            'result': {
-                'document_id': document_id,
-                'status': 'pending_indexing',
-                'note': 'Documents are indexed when RAG server starts. Newly uploaded documents are searchable via BM25 keyword search.'
-            },
-        })
+        logger.info(f"Document {document_id} uploaded. Starting background indexing...")
+
+        # Trigger background document processing
+        processing_started = trigger_document_processing()
+
+        if not processing_started:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to start document indexing',
+                'result': {
+                    'document_id': document_id,
+                    'status': 'indexing_failed'
+                },
+            }), 500
+
+        # Wait for document processing to complete (with timeout of 5 minutes)
+        logger.info(f"Waiting for document {document_id} to be indexed...")
+        processing_complete = processing_complete_event.wait(timeout=300)  # 5 minute timeout
+
+        if processing_complete:
+            logger.info(f"Document {document_id} indexed successfully and is now searchable")
+            return jsonify({
+                'success': True,
+                'message': 'Document has been processed and is now searchable.',
+                'result': {
+                    'document_id': document_id,
+                    'status': 'indexed_and_searchable',
+                    'note': 'Document is ready for queries.'
+                },
+            }), 201
+        else:
+            logger.warning(f"Document {document_id} processing timed out after 5 minutes")
+            return jsonify({
+                'success': False,
+                'error': 'Document processing timed out after 5 minutes',
+                'result': {
+                    'document_id': document_id,
+                    'status': 'timeout'
+                },
+            }), 408
 
     except Exception as e:
         logger.error(f"Ingest error: {e}")

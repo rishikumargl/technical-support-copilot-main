@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 const upload = require('../middleware/multer');
 const Document = require('../models/Document');
 const Chunk = require('../models/Chunk');
@@ -7,6 +8,12 @@ const fs = require('fs');
 const path = require('path');
 
 const router = express.Router();
+
+// RAG server URL
+const RAG_SERVER_URL = process.env.RAG_SERVER_URL || 'http://localhost:5001';
+
+// RAG ingestion data directory
+const RAG_DATA_DIR = process.env.RAG_DATA_DIR || path.join(__dirname, '../../..', 'rag-layer', 'ingestion_pipeline', 'data');
 
 router.post('/upload', upload.single('file'), async (req, res, next) => {
   try {
@@ -41,20 +48,97 @@ router.post('/upload', upload.single('file'), async (req, res, next) => {
 
     logger.info('Document uploaded', { documentId: document.id, fileName: name });
 
-    // Note: Documents are indexed when RAG server starts.
-    // Newly uploaded documents are searchable via BM25 keyword search immediately.
-    // To enable vector search on new documents, restart the RAG server.
-    logger.info('Document uploaded - will be indexed on RAG server restart', {
-      documentId: document.id,
-      fileName: name
-    });
+    // Copy file to RAG ingestion directory
+    const ragFileName = `${document.id}_${name}`;
+    const ragFilePath = path.join(RAG_DATA_DIR, ragFileName);
 
-    res.status(201).json({
-      document_id: document.id,
-      name: document.name,
-      chunk_count: 0,
-      status: 'uploaded',
-    });
+    try {
+      // Ensure RAG data directory exists
+      if (!fs.existsSync(RAG_DATA_DIR)) {
+        fs.mkdirSync(RAG_DATA_DIR, { recursive: true });
+        logger.info('Created RAG data directory', { dir: RAG_DATA_DIR });
+      }
+
+      // Copy file to RAG ingestion directory
+      await new Promise((resolve, reject) => {
+        fs.copyFile(req.file.path, ragFilePath, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      logger.info('Document copied to RAG ingestion directory', {
+        originalPath: req.file.path,
+        ragPath: ragFilePath,
+        fileName: name
+      });
+    } catch (copyError) {
+      logger.error('Failed to copy document to RAG directory', {
+        error: copyError.message,
+        ragFilePath
+      });
+      // Continue anyway - try to index from backend uploads
+    }
+
+    // Trigger automatic RAG server indexing
+    const indexingTimeout = setTimeout(() => {
+      logger.warn('Document indexing in RAG server is taking longer than expected');
+    }, 35000); // Warn if takes more than 35 seconds
+
+    try {
+      logger.info('Triggering RAG server to index document', { fileName: name, ragFileName });
+
+      const ragResponse = await axios.post(
+        `${RAG_SERVER_URL}/api/rag/ingest`,
+        { document_id: ragFileName },
+        { timeout: 300000 } // 5 minute timeout to match RAG server
+      );
+
+      clearTimeout(indexingTimeout);
+
+      if (ragResponse.data && ragResponse.data.success) {
+        logger.info('Document indexed successfully in RAG server', { ragFileName, fileName: name });
+
+        res.status(201).json({
+          document_id: document.id,
+          name: document.name,
+          chunk_count: 0,
+          status: 'indexed_and_searchable',
+          message: 'Document uploaded and indexed. Now available for search.',
+          rag_status: ragResponse.data.result?.status || 'indexed',
+        });
+      } else {
+        logger.warn('RAG server indexing failed', {
+          ragFileName,
+          error: ragResponse.data?.error || 'Unknown error'
+        });
+
+        res.status(201).json({
+          document_id: document.id,
+          name: document.name,
+          chunk_count: 0,
+          status: 'uploaded_but_not_indexed',
+          message: 'Document uploaded but RAG indexing failed. Available via keyword search only.',
+          rag_error: ragResponse.data?.error,
+        });
+      }
+    } catch (ragError) {
+      clearTimeout(indexingTimeout);
+      logger.error('Failed to contact RAG server for indexing', {
+        ragFileName,
+        error: ragError.message
+      });
+
+      // Still accept the upload even if RAG indexing fails
+      res.status(201).json({
+        document_id: document.id,
+        name: document.name,
+        chunk_count: 0,
+        status: 'uploaded_no_rag',
+        message: 'Document uploaded but RAG server unavailable. Use keyword search or restart RAG server.',
+        rag_error: ragError.message,
+      });
+    }
   } catch (error) {
     if (req.file) {
       fs.unlink(req.file.path, (err) => {
