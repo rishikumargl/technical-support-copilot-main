@@ -40,7 +40,7 @@ class RAGIntegrationPipeline:
         source_dir: str = "documents",
         output_dir: str = "output",
         qdrant_storage: str = "./qdrant_storage",
-        chunking_strategy: Literal["fixed", "semantic"] = "fixed",
+        chunking_strategy: Literal["fixed", "semantic", "intelligent", "sentence_boundary"] = "sentence_boundary",
         embedding_model: str = "all-MiniLM-L6-v2",
         hf_token: Optional[str] = None,
     ):

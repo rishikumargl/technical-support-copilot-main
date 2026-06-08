@@ -312,7 +312,7 @@ def initialize():
 
         data = request.json or {}
         source_dir = data.get('source_dir', 'ingestion_pipeline/data')
-        chunking_strategy = data.get('chunking_strategy', 'fixed')
+        chunking_strategy = data.get('chunking_strategy', 'sentence_boundary')
         use_ensemble = data.get('use_ensemble', False)  # Phase 3
         enable_query_expansion = data.get('enable_query_expansion', False)  # Phase 3
 

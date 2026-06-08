@@ -1,5 +1,6 @@
 import uuid
 import json
+import re
 from typing import List, Dict, Literal
 from abc import ABC, abstractmethod
 import logging
@@ -22,10 +23,90 @@ class ChunkingStrategy(ABC):
         pass
 
 
+class SentenceBoundaryChunking(ChunkingStrategy):
+    """Expert chunking that respects sentence and paragraph boundaries - BEST for accuracy."""
+
+    def __init__(self, chunk_size: int = 1200, min_chunk_size: int = 200):
+        self.chunk_size = chunk_size
+        self.min_chunk_size = min_chunk_size
+        logger.info(f"SentenceBoundaryChunking initialized: size={chunk_size}, min={min_chunk_size}")
+
+    def _split_into_sentences(self, text: str) -> List[str]:
+        """Split text into sentences while preserving structure."""
+        # Split by common sentence endings but keep the punctuation
+        sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', text)
+        return [s.strip() for s in sentences if s.strip()]
+
+    def chunk(self, text: str, document_name: str) -> List[Dict]:
+        """Split text intelligently by sentences within paragraphs."""
+        chunks = []
+
+        # Split by paragraphs first
+        paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
+
+        current_chunk = []
+        current_size = 0
+        start_pos = 0
+
+        for para in paragraphs:
+            # Split paragraph into sentences
+            sentences = self._split_into_sentences(para)
+
+            for sentence in sentences:
+                sentence_size = len(sentence)
+
+                # If adding this sentence would exceed chunk_size and we have content
+                if current_size + sentence_size + 1 > self.chunk_size and current_chunk:
+                    # Create chunk from accumulated sentences
+                    chunk_text = ' '.join(current_chunk)
+                    if len(chunk_text) >= self.min_chunk_size:
+                        chunk_dict = {
+                            "chunk_id": str(uuid.uuid4()),
+                            "document_name": document_name,
+                            "strategy": "sentence_boundary",
+                            "text": chunk_text,
+                            "start_pos": start_pos,
+                            "end_pos": start_pos + len(chunk_text),
+                            "size": len(chunk_text),
+                        }
+                        chunks.append(chunk_dict)
+                        start_pos += len(chunk_text) + 1
+
+                    current_chunk = []
+                    current_size = 0
+
+                # Add sentence to current chunk
+                current_chunk.append(sentence)
+                current_size += sentence_size + 1
+
+            # Add paragraph break if there are more paragraphs
+            if current_chunk and para != paragraphs[-1]:
+                current_chunk.append("\n")
+                current_size += 1
+
+        # Add remaining content
+        if current_chunk:
+            chunk_text = ' '.join([s for s in current_chunk if s != "\n"]).replace('  ', ' ')
+            if len(chunk_text) >= self.min_chunk_size:
+                chunk_dict = {
+                    "chunk_id": str(uuid.uuid4()),
+                    "document_name": document_name,
+                    "strategy": "sentence_boundary",
+                    "text": chunk_text,
+                    "start_pos": start_pos,
+                    "end_pos": start_pos + len(chunk_text),
+                    "size": len(chunk_text),
+                }
+                chunks.append(chunk_dict)
+
+        logger.info(f"Created {len(chunks)} sentence-boundary chunks from {document_name}")
+        return chunks
+
+
 class IntelligentChunking(ChunkingStrategy):
     """Intelligent chunking that respects sentence and paragraph boundaries."""
 
-    def __init__(self, chunk_size: int = 800, min_chunk_size: int = 300):
+    def __init__(self, chunk_size: int = 1200, min_chunk_size: int = 300):
         self.chunk_size = chunk_size
         self.min_chunk_size = min_chunk_size
         logger.info(f"IntelligentChunking initialized: size={chunk_size}, min={min_chunk_size}")
@@ -226,9 +307,11 @@ class SemanticChunking(ChunkingStrategy):
 class ChunkingPipeline:
     """Unified pipeline for document chunking with strategy selection."""
 
-    def __init__(self, strategy: Literal["fixed", "semantic", "adaptive", "intelligent"] = "intelligent"):
-        if strategy == "intelligent":
-            self.strategy = IntelligentChunking(chunk_size=800, min_chunk_size=300)
+    def __init__(self, strategy: Literal["fixed", "semantic", "adaptive", "intelligent", "sentence_boundary"] = "sentence_boundary"):
+        if strategy == "sentence_boundary":
+            self.strategy = SentenceBoundaryChunking(chunk_size=1200, min_chunk_size=200)
+        elif strategy == "intelligent":
+            self.strategy = IntelligentChunking(chunk_size=1200, min_chunk_size=300)
         elif strategy == "fixed":
             self.strategy = FixedSizeChunking(chunk_size=800, overlap=100)
         elif strategy == "semantic":
@@ -238,9 +321,9 @@ class ChunkingPipeline:
                 from adaptive_chunking import AdaptiveChunking
                 self.strategy = AdaptiveChunking(max_chunk_size=800)
             except ImportError:
-                logger.warning("adaptive_chunking not available, falling back to intelligent")
-                self.strategy = IntelligentChunking(chunk_size=800, min_chunk_size=300)
-                strategy = "intelligent"
+                logger.warning("adaptive_chunking not available, falling back to sentence_boundary")
+                self.strategy = SentenceBoundaryChunking(chunk_size=1200, min_chunk_size=200)
+                strategy = "sentence_boundary"
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
 
