@@ -41,6 +41,8 @@ qdrant-mock/qdrant.log
 .cache/
 .eslintcache
 .node_cache/
+redis-data/
+dump.rdb
 
 # Logs
 logs/
